@@ -22,6 +22,9 @@ export const authorizedMiddleware =
                 throw new HttpException(401, 'Unauthorized JWT invalid');
             // JWT token should start with "Bearer <token>"
             const token = authHeader.split(' ')[1]; // 0 -> Bearer, 1 -> token
+            console.log("========== BACKEND RECEIVED BEARER TOKEN ==========");
+            console.log(token);
+            console.log("====================================================");
             if (!token) throw new HttpException(401, 'Unauthorized JWT missing');
             const decodedToken = jwt.verify(token, SECRET_KEY) as Record<string, any>;
             if (!decodedToken || !decodedToken.id) {
