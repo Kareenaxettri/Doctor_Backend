@@ -1,5 +1,10 @@
 import { UserModel, IUser } from "../models/user.model";
 
+export interface PaginatedUsers {
+    data: IUser[];
+    total: number;
+}
+
 export interface IUserRepository {
     getUserByEmail(email: string): Promise<IUser | null>;
     getUserByContactNumber(contactNumber: string): Promise<IUser | null>;
@@ -9,6 +14,7 @@ export interface IUserRepository {
     getAll(): Promise<IUser[]>;
     update(id: string, user: Partial<IUser>): Promise<IUser | null>;
     delete(id: string): Promise<boolean>;
+    getPaginated(page: number, limit: number, search?: string): Promise<PaginatedUsers>;
 }
 export class UserMongoRepository implements IUserRepository {  
     async getUserById(id: string): Promise<IUser | null> {
@@ -38,5 +44,18 @@ export class UserMongoRepository implements IUserRepository {
     async delete(id: string): Promise<boolean> {
         const deleted = await UserModel.findByIdAndDelete(id);
         return !!deleted;
+    }
+    async getPaginated(page: number, limit: number, search?: string): Promise<PaginatedUsers> {
+        const filter: Record<string, any> = {};
+        if (search && search.trim().length > 0) {
+            const regex = new RegExp(search.trim(), "i");
+            filter.$or = [{ fullName: regex }, { email: regex }];
+        }
+        const skip = (page - 1) * limit;
+        const [data, total] = await Promise.all([
+            UserModel.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+            UserModel.countDocuments(filter),
+        ]);
+        return { data, total };
     }
 }

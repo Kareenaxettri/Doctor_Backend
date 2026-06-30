@@ -4,6 +4,7 @@ import path from "path";
 
 import authRouter from "./routes/auth.route";
 import userRouter from "./routes/user.route";
+import adminUserRouter from "./routes/admin-user.route";
 
 import { HttpException } from "./exception/http-exception";
 import { ApiResponseHelper } from "./utils/apihelper.util";
@@ -26,6 +27,7 @@ app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 // ✅ FIXED ROUTES (IMPORTANT)
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);
+app.use("/api/v1/admin/users", adminUserRouter);
 
 // health check
 app.get("/", (req: Request, res: Response) => {

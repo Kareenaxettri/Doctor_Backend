@@ -36,3 +36,27 @@ export const UpdatePasswordDTO = z.object({
     newPassword: z.string().min(6),
 });
 export type UpdatePasswordDTO = z.infer<typeof UpdatePasswordDTO>;
+
+// ---- Admin: user management ----
+
+export const AdminCreateUserDTO = z.object({
+    fullName: z.string().min(1, "Full name is required"),
+    email: z.string().email("Invalid email address"),
+    contactNumber: z.string().min(7, "Contact number is required"),
+    phone: z.string().optional(),
+    gender: z.enum(["male", "female", "other"]).optional(),
+    password: z.string().min(6, "Password must be at least 6 characters long"),
+    role: z.enum(["user", "admin"]).optional(),
+});
+export type AdminCreateUserDTO = z.infer<typeof AdminCreateUserDTO>;
+
+export const AdminUpdateUserDTO = z.object({
+    fullName: z.string().min(1).optional(),
+    email: z.string().email().optional(),
+    contactNumber: z.string().min(7).optional(),
+    phone: z.string().optional(),
+    gender: z.enum(["male", "female", "other"]).optional(),
+    password: z.string().min(6).optional(),
+    role: z.enum(["user", "admin"]).optional(),
+});
+export type AdminUpdateUserDTO = z.infer<typeof AdminUpdateUserDTO>;
