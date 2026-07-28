@@ -5,7 +5,6 @@ import { authorizedMiddleware, adminMiddleware } from "../middlewares/authorized
 const router = Router();
 const adminUserController = new AdminUserController();
 
-// All routes below require a valid JWT (authorizedMiddleware) AND an admin role (adminMiddleware)
 router.use(authorizedMiddleware, adminMiddleware);
 
 // GET /api/v1/admin/users -> paginated list, supports ?page=&limit=&search=
