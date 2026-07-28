@@ -78,9 +78,6 @@ export class UserService {
       { expiresIn: "30d" }
     );
 
-    console.log("Bearer Token:");
-    console.log(`Bearer ${token}`);
-
     return {
       user: this.toPublicUser(user),
       token,
