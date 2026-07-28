@@ -23,4 +23,13 @@ router.patch("/update-password", authorizedMiddleware, (req, res) =>
   authController.updatePassword(req, res)
 );
 
+// FORGOT & RESET PASSWORD
+router.post("/forgot-password", (req, res) =>
+  authController.forgotPassword(req, res)
+);
+
+router.post("/reset-password", (req, res) =>
+  authController.resetPassword(req, res)
+);
+
 export default router;
