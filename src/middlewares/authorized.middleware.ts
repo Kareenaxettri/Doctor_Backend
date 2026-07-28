@@ -12,29 +12,37 @@ declare global {
             user?: Record<string, any> | IUser
         }
     }
-} // adding tag (user) to request, can use req.user
-let userRepository = new UserMongoRepository();
+}
+
+const userRepository = new UserMongoRepository();
+
 export const authorizedMiddleware =
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const authHeader = req.headers.authorization;
             if (!authHeader || !authHeader.startsWith('Bearer '))
-                throw new HttpException(401, 'Unauthorized JWT invalid');
-            // JWT token should start with "Bearer <token>"
-            const token = authHeader.split(' ')[1]; // 0 -> Bearer, 1 -> token
-            console.log("========== BACKEND RECEIVED BEARER TOKEN ==========");
-            console.log(token);
-            console.log("====================================================");
-            if (!token) throw new HttpException(401, 'Unauthorized JWT missing');
+                throw new HttpException(401, 'Unauthorized: JWT invalid');
+
+            const token = authHeader.split(' ')[1];
+            if (!token) throw new HttpException(401, 'Unauthorized: JWT missing');
+
             const decodedToken = jwt.verify(token, SECRET_KEY) as Record<string, any>;
             if (!decodedToken || !decodedToken.id) {
-                throw new HttpException(401, 'Unauthorized JWT unverified');
-            } // make function async
+                throw new HttpException(401, 'Unauthorized: JWT unverified');
+            }
+
             const user = await userRepository.getUserById(decodedToken.id);
-            if (!user) throw new HttpException(401, 'Unauthorized user not found');
-            req.user = user; // attach user to request (like tag)
+            if (!user) throw new HttpException(401, 'Unauthorized: user not found');
+
+            req.user = user;
             return next();
-        } catch (err: Error | any) {
+        } catch (err: any) {
+            if (err.name === 'TokenExpiredError') {
+                return ApiResponseHelper.error(res, 'Unauthorized: token expired', 401);
+            }
+            if (err.name === 'JsonWebTokenError') {
+                return ApiResponseHelper.error(res, 'Unauthorized: invalid token', 401);
+            }
             return ApiResponseHelper.error(
                 res,
                 err.message || 'Internal Server Error',
@@ -48,13 +56,13 @@ export const adminMiddleware = async (
 ) => {
     try {
         if (!req.user) {
-            throw new HttpException(401, 'Unauthorized no user info');
+            throw new HttpException(401, 'Unauthorized: no user info');
         }
         if (req.user.role !== 'admin') {
-            throw new HttpException(403, 'Forbidden not admin');
+            throw new HttpException(403, 'Forbidden: not admin');
         }
         return next();
-    } catch (err: Error | any) {
+    } catch (err: any) {
         return ApiResponseHelper.error(
             res,
             err.message || 'Internal Server Error',
