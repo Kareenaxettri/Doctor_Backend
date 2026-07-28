@@ -12,10 +12,25 @@ const res = {
     }
 }
 import { Response } from "express";
+import crypto from "crypto";
+
+export function escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Generates a weak ETag from a resource's id + last-updated timestamp, used
+// for conditional GET requests (If-None-Match -> 304 Not Modified).
+export function generateETag(id: string, updatedAt?: Date | string): string {
+    const stamp = updatedAt ? new Date(updatedAt).getTime() : Date.now();
+    const hash = crypto.createHash("md5").update(`${id}:${stamp}`).digest("hex");
+    return `W/"${hash}"`;
+}
+
 export interface PaginationMeta{
     page: number;
     limit: number;
     total: number;
+    totalPages?: number;
 }
 
 export interface ApiResponse<T>{
