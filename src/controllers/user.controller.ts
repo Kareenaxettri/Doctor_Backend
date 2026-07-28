@@ -1,4 +1,6 @@
 import { Request, Response } from "express";
+import fs from "fs";
+import path from "path";
 import { UserMongoRepository } from "../repositories/user.repository";
 import { ApiResponseHelper } from "../utils/apihelper.util";
 import { UpdateProfileDTO } from "../dtos/user.dto";
@@ -6,9 +8,34 @@ import { z } from "zod";
 
 const userRepository = new UserMongoRepository();
 
-export class UserController {
+function toPublicUser(user: any) {
+  return {
+    id: user._id?.toString() || user.id?.toString?.() || user._id,
+    fullName: user.fullName,
+    email: user.email,
+    phone: user.phone ?? user.contactNumber ?? null,
+    contactNumber: user.contactNumber ?? null,
+    gender: user.gender ?? null,
+    profileImage: user.profileImage ?? null,
+    role: user.role ?? "user",
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
+}
 
-  // GET /me
+function deleteOldProfileImage(imagePath: string | null | undefined) {
+  if (!imagePath) return;
+  try {
+    const fullPath = path.join(process.cwd(), imagePath);
+    if (fs.existsSync(fullPath)) {
+      fs.unlinkSync(fullPath);
+    }
+  } catch {
+
+  }
+}
+
+export class UserController {
   async getMe(req: Request, res: Response) {
     try {
       const user = req.user as any;
@@ -17,13 +44,12 @@ export class UserController {
         return ApiResponseHelper.error(res, "User not found", 404);
       }
 
-      return ApiResponseHelper.success(res, user);
+      return ApiResponseHelper.success(res, toPublicUser(user));
     } catch (error: any) {
       return ApiResponseHelper.error(res, error.message, 500);
     }
   }
-
-  // PATCH /profile
+  
   async updateProfile(req: Request, res: Response) {
     try {
       const userId = (req.user as any)?._id?.toString();
@@ -47,6 +73,10 @@ export class UserController {
       if (gender) profileData.gender = gender;
 
       if (req.file) {
+        const existingUser = await userRepository.getUserById(userId);
+        if (existingUser?.profileImage) {
+          deleteOldProfileImage(existingUser.profileImage);
+        }
         profileData.profileImage = `/uploads/profile/${req.file.filename}`;
       }
 
@@ -62,7 +92,11 @@ export class UserController {
 
       const updated = await userRepository.update(userId, parsed.data);
 
-      return ApiResponseHelper.success(res, updated, "Profile updated");
+      if (!updated) {
+        return ApiResponseHelper.error(res, "User not found", 404);
+      }
+
+      return ApiResponseHelper.success(res, toPublicUser(updated), "Profile updated");
     } catch (error: any) {
       return ApiResponseHelper.error(res, error.message, 500);
     }
