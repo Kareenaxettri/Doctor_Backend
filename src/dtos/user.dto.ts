@@ -37,8 +37,6 @@ export const UpdatePasswordDTO = z.object({
 });
 export type UpdatePasswordDTO = z.infer<typeof UpdatePasswordDTO>;
 
-// ---- Admin: user management ----
-
 export const AdminCreateUserDTO = z.object({
     fullName: z.string().min(1, "Full name is required"),
     email: z.string().email("Invalid email address"),
