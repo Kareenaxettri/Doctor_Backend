@@ -1,4 +1,5 @@
 import { UserModel, IUser } from "../models/user.model";
+import { escapeRegex } from "../utils/apihelper.util";
 
 export interface PaginatedUsers {
     data: IUser[];
@@ -8,7 +9,7 @@ export interface PaginatedUsers {
 export interface IUserRepository {
     getUserByEmail(email: string): Promise<IUser | null>;
     getUserByContactNumber(contactNumber: string): Promise<IUser | null>;
-    // 5 common mandatory methods for a repository
+    getUserByResetToken(token: string): Promise<IUser | null>;
     createUser(user: Partial<IUser>): Promise<IUser>;
     getUserById(id: string): Promise<IUser | null>;
     getAll(): Promise<IUser[]>;
@@ -29,6 +30,13 @@ export class UserMongoRepository implements IUserRepository {
         const found = await UserModel.findOne({ contactNumber });
         return found;
     }
+    async getUserByResetToken(token: string): Promise<IUser | null> {
+        const found = await UserModel.findOne({
+            resetPasswordToken: token,
+            resetPasswordExpires: { $gt: new Date() },
+        });
+        return found;
+    }
     async createUser(user: Partial<IUser>): Promise<IUser> {
         const created = await UserModel.create(user);
         return created;
@@ -38,7 +46,7 @@ export class UserMongoRepository implements IUserRepository {
         return found;
     }
     async update(id: string, user: Partial<IUser>): Promise<IUser | null> {
-        const updated = await UserModel.findByIdAndUpdate(id, user, { new: true });
+        const updated = await UserModel.findByIdAndUpdate(id, user, { returnDocument: "after" });
         return updated;
     }
     async delete(id: string): Promise<boolean> {
@@ -48,7 +56,7 @@ export class UserMongoRepository implements IUserRepository {
     async getPaginated(page: number, limit: number, search?: string): Promise<PaginatedUsers> {
         const filter: Record<string, any> = {};
         if (search && search.trim().length > 0) {
-            const regex = new RegExp(search.trim(), "i");
+            const regex = new RegExp(escapeRegex(search.trim()), "i");
             filter.$or = [{ fullName: regex }, { email: regex }];
         }
         const skip = (page - 1) * limit;
