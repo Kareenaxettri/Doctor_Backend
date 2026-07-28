@@ -3,12 +3,13 @@ import { MONGODB_URL } from "../configs/constant";
 
 export const connectToMongoDB = async () => {
   try {
-    console.log("Trying to connect MongoDB...");
+    console.log("MongoDB URL:", JSON.stringify(MONGODB_URL));
 
     await mongoose.connect(MONGODB_URL);
 
     console.log("Connected to MongoDB successfully");
   } catch (error) {
-    console.error("Error connecting to MongoDB:", error);
+    console.error(error);
+    throw error;
   }
 };
