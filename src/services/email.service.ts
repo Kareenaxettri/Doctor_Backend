@@ -154,4 +154,73 @@ export class EmailService {
       return false;
     }
   }
+
+  public static async sendPaymentOtpEmail(
+    toEmail: string,
+    otp: string,
+    userName: string,
+    channel: "email" | "sms" = "email",
+    phone?: string
+  ): Promise<boolean> {
+    try {
+      const transporter = await this.getTransporter();
+
+      const htmlContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin:0 auto; padding:20px; border:1px solid #e0e0e0; border-radius:12px;">
+          <h2 style="color:#2f6f7e;">Doctor Appointment System</h2>
+          <p>Hello ${userName || "User"},</p>
+          <p>Your payment verification code is:</p>
+
+          <p style="text-align:center; margin:30px 0;">
+            <span style="font-size:28px; font-weight:bold; letter-spacing:4px; color:#2f6f7e;">
+              ${otp}
+            </span>
+          </p>
+
+          <p>This code expires in 10 minutes.</p>
+          <p>If you did not request this, please ignore this email.</p>
+        </div>
+      `;
+
+      const info = await transporter.sendMail({
+        from: EMAIL_FROM,
+        to: toEmail,
+        subject: "Your Payment Verification Code - Doctor Appointment System",
+        html: htmlContent,
+      });
+
+      console.log("[Email] Payment OTP email processed successfully.");
+      console.log("[Email] Recipient:", toEmail);
+      console.log("[Email] Channel:", channel);
+
+      if (process.env.NODE_ENV !== "test") {
+        const previewUrl = nodemailer.getTestMessageUrl(info as any);
+
+        if (previewUrl) {
+          console.log("[Email] Preview URL:", previewUrl);
+        }
+
+        if (!SMTP_CONFIGURED) {
+          console.log("==========================================");
+          console.log("Development Payment OTP");
+          console.log(otp);
+          console.log("==========================================");
+        }
+      }
+
+      return true;
+    } catch (error: any) {
+      console.error("[Email] Failed to send payment OTP email:", error.message);
+
+      if (process.env.NODE_ENV !== "test") {
+        console.error("[Email] Recipient:", toEmail);
+
+        if (error.code) {
+          console.error("[Email] Error Code:", error.code);
+        }
+      }
+
+      return false;
+    }
+  }
 }
